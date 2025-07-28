@@ -12,17 +12,15 @@ load_dotenv()
 
 class CustomerSupportAgent:
     def __init__(self):
-        # Use the latest OpenAI model with optimized settings
         self.llm = ChatOpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o-mini",  # Latest cost-effective model
+            model="gpt-4o-mini",
             temperature=0.7,
             max_tokens=800,
             timeout=30,
             max_retries=3
         )
         
-        # Define tools available to the agent
         self.tools = [
             Tool(
                 name="TaxiFAQSearch",
@@ -32,26 +30,23 @@ class CustomerSupportAgent:
         ]
     
     def _create_memory_with_history(self, user_id: str) -> ConversationBufferMemory:
-        """Create memory object with user's chat history"""
         memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True,
             output_key="output"
         )
         
-        # Load previous conversation history (limited to recent exchanges)
-        history = get_user_history(user_id, limit=8)  # Last 8 exchanges for context
+        history = get_user_history(user_id, limit=8)
         
         for msg in history:
             if msg.startswith("User: "):
-                memory.chat_memory.add_user_message(msg[6:])  # Remove "User: " prefix
+                memory.chat_memory.add_user_message(msg[6:])
             elif msg.startswith("Assistant: "):
-                memory.chat_memory.add_ai_message(msg[11:])  # Remove "Assistant: " prefix
+                memory.chat_memory.add_ai_message(msg[11:])
         
         return memory
     
     def _get_system_instructions(self, language: str) -> str:
-        """Get system instructions based on detected language"""
         if language == 'ar':
             return """أنت وكيل دعم عملاء محترف لشركة تطبيق تاكسي في المملكة العربية السعودية.
 
@@ -60,12 +55,7 @@ class CustomerSupportAgent:
 - استخدام أداة البحث في قاعدة الأسئلة الشائعة للحصول على معلومات محدثة
 - الرد باللغة العربية عندما يسأل العميل بالعربية
 - إذا لم تجد الإجابة، انصح العميل بالاتصال بالدعم على 920000000
-- كن مهذبًا ومفيدًا دائمًا
-
-معلومات مهمة:
-- الشركة تعمل في: الرياض، جدة، مكة، المدينة، الدمام، الخبر، والطائف
-- رقم الدعم: 920000000
-- طرق الدفع: Apple Pay، STC Pay، البطاقات الائتمانية، مدى، النقد"""
+"""
         else:
             return """You are a professional customer support agent for a taxi app company in Saudi Arabia.
 
@@ -74,12 +64,7 @@ Your primary responsibilities:
 - Use the FAQ search tool to find up-to-date information
 - Respond in English when the customer asks in English
 - If you can't find the answer, advise contacting support at 920000000
-- Always be polite and helpful
-
-Important information:
-- Service areas: Riyadh, Jeddah, Mecca, Medina, Dammam, Khobar, and Taif
-- Support number: 920000000
-- Payment methods: Apple Pay, STC Pay, credit cards, Mada cards, cash"""
+"""
     
     def run_agent(self, user_id: str, message: str) -> str:
         """

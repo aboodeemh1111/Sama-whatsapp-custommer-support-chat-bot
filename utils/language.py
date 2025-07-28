@@ -1,4 +1,3 @@
-from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
 # Set seed for consistent results

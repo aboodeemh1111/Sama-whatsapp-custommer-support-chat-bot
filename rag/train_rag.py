@@ -9,25 +9,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def create_faq_index():
-    """
-    Create FAISS index from bot-data.csv using latest OpenAI models
-    """
     try:
-        # Read the CSV file
         df = pd.read_csv('bot-data.csv')
         print(f"Loaded {len(df)} Q&A pairs from bot-data.csv")
         
-        # Create documents from Q&A pairs
         documents = []
         for index, row in df.iterrows():
             question = str(row['question']).strip()
             answer = str(row['answer']).strip()
             
-            # Skip empty rows
             if not question or not answer or question == 'nan' or answer == 'nan':
                 continue
             
-            # Create a document that combines question and answer for better retrieval
             content = f"Question: {question}\nAnswer: {answer}"
             doc = Document(
                 page_content=content,
@@ -46,23 +39,20 @@ def create_faq_index():
             print("Error: No valid documents found in the CSV file")
             return False
         
-        # Create embeddings using the latest model
         embeddings = OpenAIEmbeddings(
             api_key=os.getenv("OPENAI_API_KEY"),
-            model="text-embedding-3-small",  # Latest, cost-effective embedding model
-            dimensions=1536  # Optimal dimensions for the model
+            model="text-embedding-3-small",
+            dimensions=1536
         )
         
         print("Creating vector embeddings...")
         
-        # Create FAISS vector store with improved settings
         vectorstore = FAISS.from_documents(
             documents, 
             embeddings,
-            distance_strategy="COSINE"  # Use cosine similarity for better semantic matching
+            distance_strategy="COSINE"
         )
         
-        # Save the vector store locally
         vectorstore.save_local("taxi_faq_index")
         
         print("✅ FAISS index created and saved successfully!")
@@ -80,7 +70,6 @@ def create_faq_index():
         return False
 
 def test_retrieval():
-    """Test the retrieval system with sample queries"""
     try:
         embeddings = OpenAIEmbeddings(
             api_key=os.getenv("OPENAI_API_KEY"),
@@ -93,7 +82,6 @@ def test_retrieval():
             allow_dangerous_deserialization=True
         )
         
-        # Test queries
         test_queries = [
             "How do I book a taxi?",
             "كيف أحجز تاكسي؟",

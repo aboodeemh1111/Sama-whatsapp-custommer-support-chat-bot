@@ -4,9 +4,6 @@ import json
 from typing import Dict, Any
 
 def send_whatsapp_reply_meta(to: str, message: str) -> bool:
-    """
-    Send a WhatsApp message using Meta Cloud API
-    """
     try:
         url = f"https://graph.facebook.com/v18.0/{os.getenv('META_PHONE_NUMBER_ID')}/messages"
         
@@ -38,9 +35,6 @@ def send_whatsapp_reply_meta(to: str, message: str) -> bool:
         return False
 
 def verify_webhook(mode: str, token: str, challenge: str) -> str:
-    """
-    Verify the webhook for WhatsApp
-    """
     verify_token = os.getenv("WEBHOOK_VERIFY_TOKEN")
     
     if mode == "subscribe" and token == verify_token:
@@ -51,9 +45,6 @@ def verify_webhook(mode: str, token: str, challenge: str) -> str:
         return ""
 
 def parse_whatsapp_message(data: Dict[Any, Any]) -> Dict[str, str]:
-    """
-    Parse incoming WhatsApp webhook data
-    """
     try:
         entry = data.get("entry", [{}])[0]
         changes = entry.get("changes", [{}])[0]

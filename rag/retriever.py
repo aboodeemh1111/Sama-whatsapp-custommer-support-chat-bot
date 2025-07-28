@@ -10,10 +10,9 @@ load_dotenv()
 
 class FAQRetriever:
     def __init__(self):
-        # Use the latest ChatOpenAI with current model
         self.llm = ChatOpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o-mini",  # Latest cost-effective model
+            model="gpt-4o-mini",
             temperature=0.7,
             max_tokens=500
         )
@@ -22,7 +21,6 @@ class FAQRetriever:
         self._load_faq_data()
     
     def _load_faq_data(self):
-        """Load FAQ data from CSV file"""
         try:
             df = pd.read_csv('bot-data.csv')
             self.faq_data = []
@@ -46,26 +44,20 @@ class FAQRetriever:
             self.faq_data = []
     
     def _extract_keywords(self, text):
-        """Extract keywords from text for better matching"""
-        # Remove common Arabic and English stop words and extract meaningful terms
         stop_words = {'how', 'what', 'where', 'when', 'why', 'do', 'does', 'can', 'could', 'would', 'should',
                      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
                      'كيف', 'ماذا', 'أين', 'متى', 'لماذا', 'هل', 'يمكن', 'في', 'على', 'إلى', 'من', 'مع'}
         
-        # Extract words and filter out stop words
         words = re.findall(r'\b\w+\b', text.lower())
         keywords = [word for word in words if word not in stop_words and len(word) > 2]
         return keywords
     
     def _calculate_similarity(self, query, faq_item):
-        """Calculate similarity between query and FAQ item"""
         query_lower = query.lower()
         question_lower = faq_item['question_lower']
         
-        # Direct text similarity
         text_similarity = SequenceMatcher(None, query_lower, question_lower).ratio()
         
-        # Keyword matching
         query_keywords = set(self._extract_keywords(query))
         faq_keywords = set(faq_item['keywords'])
         
@@ -74,54 +66,41 @@ class FAQRetriever:
         else:
             keyword_similarity = 0
         
-        # Combined score
         return (text_similarity * 0.6) + (keyword_similarity * 0.4)
     
     def _find_best_matches(self, query, top_k=3):
-        """Find the best matching FAQ items"""
         if not self.faq_data:
             return []
         
-        # Calculate similarities
         similarities = []
         for faq_item in self.faq_data:
             similarity = self._calculate_similarity(query, faq_item)
             similarities.append((similarity, faq_item))
         
-        # Sort by similarity and get top matches
         similarities.sort(key=lambda x: x[0], reverse=True)
         
-        # Only return matches with reasonable similarity (> 0.1)
         good_matches = [(score, item) for score, item in similarities if score > 0.1]
         
         return good_matches[:top_k]
     
     def search_knowledge_base(self, query: str) -> str:
-        """
-        Search the knowledge base for relevant answers
-        """
         try:
             if not self.faq_data:
                 return "I'm sorry, but I cannot access the knowledge base right now. Please contact our support team at 920000000."
             
-            # Find best matches
             matches = self._find_best_matches(query)
             
             if not matches:
-                # No good matches found
                 if any(word in query.lower() for word in ['مرحبا', 'hello', 'hi', 'السلام']):
                     return "مرحباً بك! كيف يمكنني مساعدتك اليوم؟ / Hello! How can I help you today?"
                 else:
                     return "I'm sorry, I don't have specific information about that. Please contact our customer support at 920000000 for assistance. / أعتذر، ليس لدي معلومات محددة حول ذلك. يرجى الاتصال بخدمة العملاء على 920000000."
             
-            # Use the best match if similarity is high enough
             best_score, best_match = matches[0]
             
             if best_score > 0.5:
-                # High confidence - return the answer directly
                 return best_match['answer']
             else:
-                # Medium confidence - use LLM to generate a response based on context
                 context = "\n".join([f"Q: {item['question']}\nA: {item['answer']}" for _, item in matches])
                 
                 prompt_template = """You are a helpful customer support agent for a taxi app company in Saudi Arabia.
@@ -150,9 +129,7 @@ class FAQRetriever:
             print(f"Error searching knowledge base: {e}")
             return "I'm experiencing technical difficulties. Please contact our support team at 920000000. / أواجه صعوبات تقنية. يرجى الاتصال بفريق الدعم على 920000000."
 
-# Create a global instance
 faq_retriever = FAQRetriever()
 
-# Convenience function for backward compatibility
 def search_knowledge_base(query: str) -> str:
     return faq_retriever.search_knowledge_base(query) 

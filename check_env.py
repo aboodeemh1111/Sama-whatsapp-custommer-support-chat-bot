@@ -1,26 +1,18 @@
 #!/usr/bin/env python3
 
-"""
-Simple script to check environment variables
-"""
-
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 print("🔍 Checking Environment Variables")
 print("=" * 50)
 
-# Check Gemini API Key
 gemini_key = os.getenv("GEMINI_API_KEY")
 if gemini_key:
-    # Mask the key for security
     masked_key = gemini_key[:8] + "*" * (len(gemini_key) - 12) + gemini_key[-4:] if len(gemini_key) > 12 else "***masked***"
     print(f"✅ GEMINI_API_KEY found: {masked_key}")
     
-    # Check if it's the placeholder
     if gemini_key.startswith("your_") or gemini_key.startswith("AIza-your"):
         print("❌ API key appears to be a placeholder. Please update with your real key.")
     elif len(gemini_key) < 30:
@@ -30,7 +22,6 @@ if gemini_key:
 else:
     print("❌ GEMINI_API_KEY not found")
 
-# Check other variables
 mongo_uri = os.getenv("MONGO_URI")
 if mongo_uri:
     print(f"✅ MONGO_URI found: {mongo_uri[:20]}...")

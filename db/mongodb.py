@@ -8,12 +8,9 @@ class MongoDB:
         mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
         try:
             self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-            # Test the connection
             self.client.server_info()
             
-            # Extract database name from URI or use default
             if "mongodb+srv://" in mongo_uri or "mongodb://" in mongo_uri:
-                # For Atlas URIs, extract database name or use default
                 if "/" in mongo_uri.split("@")[-1]:
                     db_name = mongo_uri.split("/")[-1].split("?")[0]
                     if db_name:
@@ -32,23 +29,19 @@ class MongoDB:
         except Exception as e:
             print(f"❌ MongoDB connection failed: {e}")
             print("Please check your MONGO_URI in the .env file")
-            # Create a fallback that won't crash the app
             self.client = None
             self.db = None
             self.conversations = None
             self.messages = None
 
     def get_user_history(self, user_id: str, limit: int = 10) -> List[str]:
-        """
-        Retrieve chat history for a user to maintain conversation context
-        """
         try:
             if not self.messages:
                 return []
                 
             messages = self.messages.find(
                 {"user_id": user_id}
-            ).sort("timestamp", -1).limit(limit * 2)  # Get both user and bot messages
+            ).sort("timestamp", -1).limit(limit * 2)
             
             history = []
             for msg in reversed(list(messages)):
@@ -63,9 +56,6 @@ class MongoDB:
             return []
 
     def save_message(self, user_id: str, user_message: str, bot_response: str, language: str = "en"):
-        """
-        Save both user message and bot response to maintain conversation history
-        """
         try:
             if not self.messages or not self.conversations:
                 print("MongoDB not connected - messages not saved")
@@ -73,7 +63,6 @@ class MongoDB:
                 
             timestamp = datetime.utcnow()
             
-            # Save user message
             self.messages.insert_one({
                 "user_id": user_id,
                 "content": user_message,
@@ -82,7 +71,6 @@ class MongoDB:
                 "timestamp": timestamp
             })
             
-            # Save bot response
             self.messages.insert_one({
                 "user_id": user_id,
                 "content": bot_response,
@@ -91,7 +79,6 @@ class MongoDB:
                 "timestamp": timestamp
             })
             
-            # Update conversation summary
             self.conversations.update_one(
                 {"user_id": user_id},
                 {
@@ -107,10 +94,8 @@ class MongoDB:
         except Exception as e:
             print(f"Error saving message: {e}")
 
-# Create a global instance
 mongodb = MongoDB()
 
-# Convenience functions for backward compatibility
 def get_user_history(user_id: str, limit: int = 10) -> List[str]:
     return mongodb.get_user_history(user_id, limit)
 

@@ -21,9 +21,6 @@ async def verify_webhook_endpoint(
     hub_challenge: str = Query(alias="hub.challenge"), 
     hub_verify_token: str = Query(alias="hub.verify_token")
 ):
-    """
-    Webhook verification endpoint for WhatsApp
-    """
     challenge = verify_webhook(hub_mode, hub_verify_token, hub_challenge)
     if challenge:
         return PlainTextResponse(challenge)
@@ -32,14 +29,10 @@ async def verify_webhook_endpoint(
 
 @app.post("/webhook")
 async def whatsapp_webhook(request: Request):
-    """
-    Handle incoming WhatsApp messages
-    """
     try:
         data = await request.json()
         print(f"Received webhook data: {data}")
         
-        # Parse the WhatsApp message
         message_data = parse_whatsapp_message(data)
         
         if not message_data:
@@ -51,10 +44,8 @@ async def whatsapp_webhook(request: Request):
         
         print(f"Processing message from {user_name} ({user_id}): {user_message}")
         
-        # Get response from the agent
         response = run_agent(user_id, user_message)
         
-        # Send response back via WhatsApp
         success = send_whatsapp_reply_meta(user_id, response)
         
         if success:
@@ -68,9 +59,6 @@ async def whatsapp_webhook(request: Request):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(chat_request: ChatRequest):
-    """
-    Direct chat endpoint for testing (not used by WhatsApp)
-    """
     try:
         response = run_agent(chat_request.user_id, chat_request.message)
         language = detect_language(chat_request.message)
@@ -85,9 +73,6 @@ async def chat_endpoint(chat_request: ChatRequest):
 
 @app.get("/health")
 async def health_check():
-    """
-    Health check endpoint
-    """
     return {"status": "healthy", "message": "Service is running"}
 
 if __name__ == "__main__":
